@@ -78,7 +78,7 @@ class URL:
         if not link:
             raise ValueError("Empty string. No link found!")
 
-        if link_elements := re.search(r'^https?://(?:www\.)?(?:(redd)\.it/\w+|(reddit)\.com/r/\w+/\w+/\w+/?|(x)\.com/(?:\w+/status/\w+|i/web/status/\w+))/?$', link):
+        if link_elements := re.search(r'^https?://(?:www\.)?(?:(redd)\.it/\w+|(reddit)\.com/r/(?:\w+/?){3}$|(x)\.com/(?:\w+/status/\w+|i/web/status/\w+))/?$', link):
 
             for element in link_elements.groups():
                 # Get the site name, avoiding None. Eg: (None, None, x).
