@@ -78,7 +78,7 @@ class URL:
         if not link:
             raise ValueError("Empty string. No link found!")
 
-        if link_elements := re.search(r'^https?://(?:www\.)?(?:(redd)\.it/\w+|(reddit)\.com/r/(?:\w+/?){3}$|(x)\.com/(?:\w+/status/\w+|i/web/status/\w+))/?$', link):
+        if link_elements := re.search(r'^https?://(?:www\.)?(?:(redd)\.it/\w+|(reddit)\.com/r/\w+/\w+/\w+/?|(x)\.com/(?:\w+/status/\w+|i/web/status/\w+))/?$', link):
 
             for element in link_elements.groups():
                 # Get the site name, avoiding None. Eg: (None, None, x).
@@ -102,11 +102,10 @@ class URL:
         return self._is_true
 
     @is_true.setter
-    def is_true(self, is_true):
-        # Ensure it's harder to change the boolean value is_true to "True" by default.
-        if is_true:
-            raise ValueError("Default value is False!")
-        self._is_true = is_true
+    def is_true(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("The value for is_true must be a boolean (True or False).")
+        self._is_true = value
 
     @property
     def truth_percentage(self):
