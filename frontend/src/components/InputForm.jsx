@@ -7,15 +7,27 @@ function InputForm() {
   const [inputValue, setInputValue] = useState('');
 
   // This function runs when the user submits the form (by clicking the button).
-  const handleSubmit = (event) => {
-    // This prevents the browser from doing a full page refresh.
-    event.preventDefault();
+  const handleSubmit = async (event) => {
+  event.preventDefault();
+  console.log('Sending to backend:', inputValue);
 
-    // For now, we'll just print the input to the browser's developer console.
-    // Later, this is where you'll send the data to your backend API!
-    console.log('Submitting URL or text:', inputValue);
-    // You could add logic here to show a "Loading..." message.
-  };
+  try {
+    const response = await fetch('http://127.0.0.1:8000/check-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url: inputValue }),
+    });
+
+    const data = await response.json();
+    console.log('Received from backend:', data);
+    // Later, you'll use this data to display the result to the user!
+
+  } catch (error) {
+    console.error('Error sending data to backend:', error);
+  }
+};
 
   return (
     <div className="form-container">
