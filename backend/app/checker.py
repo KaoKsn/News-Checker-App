@@ -5,6 +5,7 @@ from fake_useragent import UserAgent
 import json
 import re
 import requests
+import sys
 import time
 
 VERSION = "1.0.0"
@@ -181,17 +182,22 @@ class URL:
         # TODO: Add sources.
         print()
 
+class CustomArgParser(argparse.ArgumentParser):
+    def error(self, msg):
+        self.print_usage(sys.stderr)
+        sys.stderr.write(f'ERROR: {msg}\n\n')
+        for formats in URL.supported_formats:
+            sys.stderr.write(f"python checker.py [-s] [-v] [-V] {formats}\n")
+        sys.exit(1)
 
 def main():
     # Command line arguments.
-    parser = argparse.ArgumentParser(
+    parser = CustomArgParser(
         prog = "checker.py",
         description = "A python program to probabilistically determine the truth value of a claim raised in a link on platforms like Reddit/X.",
         epilog = "Source @ github.com/maurya-doshi/News-Checker-App\nContributors:\n1.KaoKsn\n2.Maurya Doshi",
+        usage = "python checker.py [-h/--help] [-s/--silent] [-v/--verbose] [-V/--version] link",
     )
-
-    #TODO: Print all the valid link types in the help message.
-    #TODO: Customize the error message by overriding the error() method.
 
     # Flags
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -211,7 +217,7 @@ def main():
     except ValueError:
         print("\nUsage:")
         for formats in URL.supported_formats:
-            print(f"python checker.py {formats} [-s/--silent] [-v/--verbose] [-V/--version] link")
+            print(f"python checker.py [-s] [-v] [-V] {formats}")
         return 1
 
     else:
