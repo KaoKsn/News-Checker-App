@@ -1,9 +1,13 @@
 import argparse
+from bs4 import BeautifulSoup
 from datetime import datetime
+from fake_useragent import UserAgent
 import json
 import re
 import requests
 import time
+
+VERSION = "1.0.0"
 
 '''
     Class URL
@@ -126,17 +130,44 @@ class URL:
 
 
     # Use exception handling after reading the API.
-    def news_json(self):
-        # A dummy request.
-        response = requests.get("https://itunes.apple.com/search?entity=song&limit=1&term=weezer")
+    def get_content(self):
+        session = requests.Session()
+        headers = {
+            'User-Agent': UserAgent().random,
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Referer': "https://www.google.com",
+        }
+        proxy_auth = "proxy_auth_string" #NOTE: Replace the original proxy_auth string here.
+        proxies = {
+            'http': f"http://{proxy_auth}",
+            'https': f"https://{proxy_auth}",
+        }
+        try:
+            response = session.get(self._link, headers = headers) # ,proxies = proxies)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as errh:
+            print("HTTP Error")
+            print(errh.args[0])
+        except requests.exceptions.ReadTimeout as toerr:
+            print("Time out")
+            print(toerr.args[0])
+        except requests.exceptions.ConnectionError as conerr:
+            print("Connection error")
+            print(conerr.args[0])
+        except requests.exceptions.RequestException as errex:
+            print("Exception request")
+            print(errex.args[0])
 
         # Ensure a valid response was received.
         if response.status_code == 200:
-            response = response.json()
-            print(json.dumps(response, indent = 4))
-
+            # Scrape the website for the text contents.
+            soup = BeautifulSoup(response.text, 'html.parser')
+            return {"html": soup, "title": soup.title.text, "body": soup.body.text, "anchors": soup.find_all('a')}
         else:
-              print("Error Status during API request:", response.status_code)
+            print("Failed fetching a valid response from the site: ", response.status_code)
+            return None
 
     # A verbose verdict regarding the claim at the given link.
     def verbose_verdict(self):
@@ -147,22 +178,28 @@ class URL:
         print(f"Truth Value: {self._is_true}")
         print(f"Probability of being true: {self._truth_percentage}")
         print(f"Time spent on analysis: {time.time() - self.s_time:.4f} s")
-
         # TODO: Add sources.
-
         print()
 
 
 def main():
     # Command line arguments.
-    parser = argparse.ArgumentParser(prog = "checker.py", description = "A python program to probabilistically determine the truth value of a claim raised in a link on platforms like Reddit/X.", epilog = "Source @ github.com/maurya-doshi/News-Checker-App\nContributors:\n1.KaoKsn\n2.Maurya Doshi")
+    parser = argparse.ArgumentParser(
+        prog = "checker.py",
+        description = "A python program to probabilistically determine the truth value of a claim raised in a link on platforms like Reddit/X.",
+        epilog = "Source @ github.com/maurya-doshi/News-Checker-App\nContributors:\n1.KaoKsn\n2.Maurya Doshi",
+    )
 
-    parser.add_argument("link") # Positional argument: link to the claim.
+    #TODO: Print all the valid link types in the help message.
+    #TODO: Customize the error message by overriding the error() method.
 
     # Flags
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("-s", "--silent", action="store_true")
-    parser.add_argument("-V", "--version", action="store_true")
+    parser.add_argument("-V", "--version", action="version", version = f"checker.py {VERSION}")
+    
+    # Positional argument: link to the claim.
+    parser.add_argument("link", help = "A valid link.")
 
     # Parsing the command line arguments.
     args = parser.parse_args()
@@ -174,12 +211,18 @@ def main():
     except ValueError:
         print("\nUsage:")
         for formats in URL.supported_formats:
-            print(f"python checker.py {formats} [-s] [-v] [-V]")
+            print(f"python checker.py {formats} [-s/--silent] [-v/--verbose] [-V/--version] link")
         return 1
 
     else:
-        # Read the contents of the link in JSON format.
-        news_engine.news_json()
+        # Read the html contents in the link.
+        linkInfo = news_engine.get_content() # {"html": soup, "title": soup.title.text, "body": soup.body.text, "anchors": soup.get_all('a')}
+        
+        #NOTE: On success, pass the siteContent dict to the NLP and feed appropriate text.
+        if (linkInfo):
+            ... #NOTE: NLP_verify(news_engine, linkInfo)
+        else:
+            ... #NOTE: Redirect the user to the search page.
 
         # If a silent output requested, just give enough information.
         if args.silent:
