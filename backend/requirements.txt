@@ -1,5 +1,7 @@
 argparse
+beautifulsoup4
 datetime
+fake-useragent
 json
 fastapi
 fastapi[standard]
